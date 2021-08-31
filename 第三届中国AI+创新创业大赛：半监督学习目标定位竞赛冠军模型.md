@@ -51,9 +51,10 @@ ACFFNet先使用SE模块与MFR模块处理最高层特征，然后使用CFF模�
 SE模块通过压缩与激励两个操作实现特征通道的选择，为不同的通道分配不同的权重，从特征图层面以抑制不重要的特征通道。Paddle代码实现如下
 
 
-  from paddle import nn
+ ''' from paddle import nn
+  
+  
   class SEModule(nn.Layer):
-
       def __init__(self, channels, reduction=16):
 
           super(SEModule, self).__init__()
@@ -70,7 +71,7 @@ SE模块通过压缩与激励两个操作实现特征通道的选择，为不同
           x = self.fc2(x)
           x = self.sigmoid(x)
           return inputs * x
-
+'''
 ##### 2.4.1.2 MFR
 <img src="images/MFR.jpg" style="zoom:20%" />
 MFR模块使用了1×3和3×1的非对称卷积以及残差连接的方式进行特征的处理，非对称卷积可以从多种感受野来获取特征信息，尤其在小尺寸的特征图中，非对称卷积会比普通的3×3卷积效果好。残差连接则是为了通过对应像素点相加，抑制背景噪音。Paddle代码实现如下
