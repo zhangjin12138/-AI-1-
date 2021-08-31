@@ -51,7 +51,8 @@ ACFFNet先使用SE模块与MFR模块处理最高层特征，然后使用CFF模�
 SE模块通过压缩与激励两个操作实现特征通道的选择，为不同的通道分配不同的权重，从特征图层面以抑制不重要的特征通道。Paddle代码实现如下
 
 
- ''' from paddle import nn
+ '''python
+ from paddle import nn
   
   
   class SEModule(nn.Layer):
