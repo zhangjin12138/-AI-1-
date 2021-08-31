@@ -52,7 +52,6 @@ SE模块通过压缩与激励两个操作实现特征通道的选择，为不同
 
 
 from paddle import nn
-
 class SEModule(nn.Layer):
 
     def __init__(self, channels, reduction=16):
