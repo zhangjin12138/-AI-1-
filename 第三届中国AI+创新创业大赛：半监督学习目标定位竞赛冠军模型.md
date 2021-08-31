@@ -76,7 +76,7 @@ SE模块通过压缩与激励两个操作实现特征通道的选择，为不同
 ##### 2.4.1.2 MFR
 <img src="images/MFR.jpg" style="zoom:20%" />
 MFR模块使用了1×3和3×1的非对称卷积以及残差连接的方式进行特征的处理，非对称卷积可以从多种感受野来获取特征信息，尤其在小尺寸的特征图中，非对称卷积会比普通的3×3卷积效果好。残差连接则是为了通过对应像素点相加，抑制背景噪音。Paddle代码实现如下
-
+``` python
 class MFRModel(nn.Layer):
 
 
@@ -103,10 +103,12 @@ class MFRModel(nn.Layer):
         down = F.relu(self.bn31(self.conv31(down)))
         down = self.bn13(self.conv13(down))
         return F.relu(left + down)
-        
+```
  ##### 2.4.1.3 CFF
  <img src="images/CFF.jpg" style="zoom:80%" />
 CFF模块结合了上下文信息与全局信息，每个CFF模块都有来自最深层特征的指导，通过融合深层次特征，更容易定位图像中的目标。CFF模块采取了3个输入特征两两相乘的方式进行特征融合，元素级乘法可以有效地抑制不同层特征的背景噪音，大尺寸图片中复杂的背景像素点的值在对应的小尺寸图片中的位置往往为0或者负，相乘再经过激活函数的处理，就可以很好的优化特征信息。Paddle代码实现如下。
+
+``` python
 
 class CFFModel(nn.Layer):
 
@@ -137,12 +139,13 @@ class CFFModel(nn.Layer):
         z = right * down  # FhM
         out = paddle.concat([x, y, z], 1)
         return F.relu(self.bn3(self.conv3(out)))
-        
+```
+
  ##### 2.4.1.4 SR
   <img src="images/SR.jpg" style="zoom:20%" />
   
  SR模块是参考的2020年CVPR顶会《Global Context-Aware Progressive Aggregation Network for Salient Object Detection》里面提出的SR模块，可以起到填补CFF模块中不同层直接相乘导致的预测图中出现孔洞的作用。Paddle代码如下。
- 
+ ``` python
  class SRModel(nn.Layer):
  
     def __init__(self, in_channel):
@@ -156,7 +159,8 @@ class CFFModel(nn.Layer):
         out2 = self.conv2(out1)
         w, b = out2[:, :256, :, :], out2[:, 256:, :, :]
         return F.relu(w * out1 + b)
-        
+ ```
+ 
 #### 2.4.2 FMFNet
   <img src="images/FMFNet.jpg" style="zoom:20%" />
 
@@ -167,7 +171,7 @@ SSM模块使用了空洞卷积，空洞卷积图如下
   <img src="images/Dilation.jpg" style="zoom:50%" />
 
 空洞卷积通过在卷积核之间填充0的方式增大卷积核的感受野，从而使相同大小的卷积核拥有更大的视野，可以获取更加全面的视觉信息。不同的空洞率有着不同的感受野，越大的空洞率拥有越大的视野。以空洞卷积为主的ASPP模块通过有着多种空洞率的卷积核的堆叠获得不同尺度的特征信息，经卷积压缩后输出，从而补充经池化操作损失的信息，这里我们只用了一种空洞率为3的卷积核。Paddle代码如下
-
+``` python
 class SSM(nn.Layer): 
 
     def __init__(self):
@@ -176,20 +180,17 @@ class SSM(nn.Layer):
         self.bn1 = nn.BatchNorm2D(64)
         self.cv2 = nn.Conv2D(64, 64, 3, 1, 3, dilation=3)
         self.bn2 = nn.BatchNorm2D(64)
-        self.initialize()
 
     def forward(self, x):
         d1 = self.bn1(self.cv1(x))
         d2 = self.bn2(self.cv2(x))
         out = F.relu(d1+d2+x)
         return out
-
-    def initialize(self):
-        weight_init(self)
+```
 
 ##### 2..4.2.2 FIM
 FIM模块通过高低层特征分别与邻层特征交互，再通过残差连接的方式细化特征，最终实现多层特征的优化。高层特征通过上采样，低层特征通过下采样，分别于低高层特征融合，实现交互。Paddle代码如下。
-
+``` python
 class FIM(nn.Layer): 
 
     def __init__(self):
@@ -203,7 +204,6 @@ class FIM(nn.Layer):
         self.bn3 = nn.BatchNorm2D(64)
         self.cv4 = nn.Conv2D(64, 64, 3, 1, 1)
         self.bn4 = nn.BatchNorm2D(64)
-        self.initialize()
         
     def forward(self, l, h):
         h_l = F.interpolate(h, size=l.shape[2:], mode='bilinear', align_corners=True)
@@ -218,10 +218,10 @@ class FIM(nn.Layer):
         l = F.relu(l_h_l + l)
         h = F.relu(h_l_h + h)
         return l, h
-        
+```
 ##### 2..4.2.3 PFM
 PFM模块很简单，就是高层特征的渐进式上采样与低层特征相互融合的过程。Paddle代码如下。
-
+``` python
 class PFM(nn.Layer):
 
     def __init__(self):
@@ -249,7 +249,6 @@ class PFM(nn.Layer):
 
         self.cv8 = nn.Conv2D(128, 64, 3, 1, 1)
         self.bn8 = nn.BatchNorm2D(64)
-        self.initialize()
 
     def forward(self, out1, out2, out3, out4, out5):
         out5 = F.interpolate(out5, size=out4.shape[2:], mode='bilinear', align_corners=True)
@@ -274,24 +273,11 @@ class PFM(nn.Layer):
         out1 = F.relu(self.bn8(self.cv8(out1)))
         return out1
 
-    def initialize(self):
-        weight_init(self)
+```
 
 
 #### 2.4.3总结
 我们通过使用PaddleClas中提供的三个骨干网络(Res2Net200、ResNeXt101、SwinT384)和两种解码网络(ACFFNet、FMFNet)构建了四个模型，即Res2Net200+ACFFNet、ResNeXt101+ACFFNet、SwinT384+ACFFNet、Res2Net200+FMFNet。四个模型的加权融合得到了比赛的最高分。
 
 
-```python
 
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
