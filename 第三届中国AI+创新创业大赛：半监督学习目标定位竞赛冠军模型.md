@@ -73,6 +73,7 @@ SE模块通过压缩与激励两个操作实现特征通道的选择，为不同
           x = self.sigmoid(x)
           return inputs * x
 ```
+
 ##### 2.4.1.2 MFR
 <img src="images/MFR.jpg" style="zoom:20%" />
 MFR模块使用了1×3和3×1的非对称卷积以及残差连接的方式进行特征的处理，非对称卷积可以从多种感受野来获取特征信息，尤其在小尺寸的特征图中，非对称卷积会比普通的3×3卷积效果好。残差连接则是为了通过对应像素点相加，抑制背景噪音。Paddle代码实现如下
@@ -105,10 +106,10 @@ class MFRModel(nn.Layer):
         down = self.bn13(self.conv13(down))
         return F.relu(left + down)
 ```
+
  ##### 2.4.1.3 CFF
  <img src="images/CFF.jpg" style="zoom:80%" />
 CFF模块结合了上下文信息与全局信息，每个CFF模块都有来自最深层特征的指导，通过融合深层次特征，更容易定位图像中的目标。CFF模块采取了3个输入特征两两相乘的方式进行特征融合，元素级乘法可以有效地抑制不同层特征的背景噪音，大尺寸图片中复杂的背景像素点的值在对应的小尺寸图片中的位置往往为0或者负，相乘再经过激活函数的处理，就可以很好的优化特征信息。Paddle代码实现如下。
-
 ``` python
 
 class CFFModel(nn.Layer):
