@@ -77,11 +77,10 @@ SE模块通过压缩与激励两个操作实现特征通道的选择，为不同
 ##### 2.4.1.2 MFR
 <img src="images/MFR.jpg" style="zoom:20%" />
 MFR模块使用了1×3和3×1的非对称卷积以及残差连接的方式进行特征的处理，非对称卷积可以从多种感受野来获取特征信息，尤其在小尺寸的特征图中，非对称卷积会比普通的3×3卷积效果好。残差连接则是为了通过对应像素点相加，抑制背景噪音。Paddle代码实现如下
+
 ``` python
 
 class MFRModel(nn.Layer):
-
-
     def __init__(self, in_channel_left, in_channel_right):
         super(MFRModel, self).__init__()
         self.conv0 = nn.Conv2D(in_channel_left, 256, 3, 1, 1)
