@@ -51,25 +51,25 @@ ACFFNet先使用SE模块与MFR模块处理最高层特征，然后使用CFF模�
 SE模块通过压缩与激励两个操作实现特征通道的选择，为不同的通道分配不同的权重，从特征图层面以抑制不重要的特征通道。Paddle代码实现如下
 
 
-from paddle import nn
-class SEModule(nn.Layer):
+  from paddle import nn
+  class SEModule(nn.Layer):
 
-    def __init__(self, channels, reduction=16):
-    
-        super(SEModule, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2D(1)
-        self.fc1 = nn.Conv2D(channels, channels // reduction, kernel_size=1, padding=0)
-        self.relu = nn.ReLU()
-        self.fc2 = nn.Conv2D(channels // reduction, channels, kernel_size=1, padding=0)
-        self.sigmoid = nn.Sigmoid()
+      def __init__(self, channels, reduction=16):
 
-    def forward(self, inputs):
-        x = self.avg_pool(inputs)
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        x = self.sigmoid(x)
-        return inputs * x
+          super(SEModule, self).__init__()
+          self.avg_pool = nn.AdaptiveAvgPool2D(1)
+          self.fc1 = nn.Conv2D(channels, channels // reduction, kernel_size=1, padding=0)
+          self.relu = nn.ReLU()
+          self.fc2 = nn.Conv2D(channels // reduction, channels, kernel_size=1, padding=0)
+          self.sigmoid = nn.Sigmoid()
+
+      def forward(self, inputs):
+          x = self.avg_pool(inputs)
+          x = self.fc1(x)
+          x = self.relu(x)
+          x = self.fc2(x)
+          x = self.sigmoid(x)
+          return inputs * x
 
 ##### 2.4.1.2 MFR
 <img src="images/MFR.jpg" style="zoom:20%" />
